@@ -1,0 +1,44 @@
+name: Issue Title Check
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  check_title_length:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check issue title length
+        id: title_check
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+        run: |
+          TITLE="$ISSUE_TITLE"
+
+          LENGTH=$(echo -n "$TITLE" | wc -m)
+
+          echo "Title: $TITLE"
+          echo "Length: $LENGTH"
+
+          if [ "$LENGTH" -ge 60 ]; then
+            echo "too_long=true" >> "$GITHUB_OUTPUT"
+            exit 1
+          else
+            echo "too_long=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Post comment if title is too long
+        if: steps.title_check.outcomes == 'failure'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issueNumber = context.issue.number;
+            const repoOwner = context.repo.owner;
+            const repoName = context.repo.repo;
+            await github.issues.createComment({
+              owner: repoOwner,
+              repo: repoName,
+              issue_number: issueNumber,
+              body: "The issue title is too long (over 60 characters). Please shorten it."
+            });
