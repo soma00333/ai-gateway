@@ -9,27 +9,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check issue title length
+        id: title_check
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
         run: |
-          TITLE="${{ github.event.issue.title }}"
+          TITLE="$ISSUE_TITLE"
+
           LENGTH=$(echo -n "$TITLE" | wc -m)
 
           echo "Title: $TITLE"
           echo "Length: $LENGTH"
 
           if [ "$LENGTH" -ge 60 ]; then
-            echo "Too long!"
+            echo "too_long=true" >> "$GITHUB_OUTPUT"
             exit 1
+          else
+            echo "too_long=false" >> "$GITHUB_OUTPUT"
           fi
-          echo "OK"
 
-  comment_if_long:
-    runs-on: ubuntu-latest
-    needs: [check_title_length]
-    if: always()
-    steps:
-      - name: Create comment if previous job failed
+      - name: Post comment if title is too long
+        if: steps.title_check.outcomes == 'failure'
         uses: actions/github-script@v6
-        if: ${{ needs.check_title_length.result == 'failure' }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
