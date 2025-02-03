@@ -12,7 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check issue title length
-        id: check_length
         run: |
           TITLE="${{ github.event.issue.title }}"
           LENGTH=$(echo -n "$TITLE" | wc -m)
